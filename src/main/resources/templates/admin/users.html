@@ -1,0 +1,133 @@
+<!DOCuser html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="admin/_fragments :: head(~{::title})">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/2.2.4/semantic.min.css">
+    <link rel="stylesheet" href="../../static/css/me.css">
+</head>
+<body>
+
+<!--导航-->
+<nav th:replace="admin/_fragments :: menu(1)">导航条</nav>
+
+<!--中间内容-->
+<div class="m-padded-tb-big" style="min-height:85vh">
+    <div class="ui container">
+        <div class="ui success message" th:unless="${#strings.isEmpty(message)}">
+            <i class="close icon"></i>
+            <div class="header">提示：</div>
+            <p th:text="${message}">操作成功！</p>
+        </div>
+        <div class="alert m-them-shadow"></div>
+        <!--
+            <form action="#" method="post"  th:object="${user}" th:action="*{id}==null ? @{/admin/users} : @{/admin/users/{id}(id=*{id})} "  class="ui form">
+              <input user="hidden" name="id" th:value="*{id}">
+              <div class=" field">
+                <div class="ui left labeled input">
+                  <label class="ui blue basic label">名称</label>
+                  <input user="text" name="name" placeholder="分类名称" th:value="*{username}" >
+                </div>
+              </div>
+
+              <div class="ui error message"></div>
+              <div class="ui right aligned container">
+                <button user="button" class="ui button" onclick="window.history.go(-1)" >返回</button>
+                <button class="ui primary submit button">提交</button>
+              </div>
+            </form>
+        -->
+
+        <table class="ui compact grey table">
+            <thead>
+            <tr style="text-align: center">
+                <th>#</th>
+                <th>用户ID</th>
+                <th>用户名</th>
+                <th>邮箱</th>
+                <th>创建时间</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="user,iterStat : ${page.content}" style="text-align: center">
+                <td th:text="${iterStat.count}">1</td>
+                <td th:text="${user.id}">用户ID</td>
+                <td th:text="${user.username}">用户名</td>
+                <td th:text="${user.email}">邮箱</td>
+                <td th:text="${user.createTime}">创建时间</td>
+                <td>
+                    <a href="#" th:href="@{/admin/users/{id}/input(id=${user.id})}"
+                       class="ui tiny primary button">修改用户</a>
+                    <!--<a href="#" th:href="@{/admin/users/{id}/delete(id=${user.id})}" class="ui tiny red basic button">删除</a>-->
+                    <div class="ui toggle checkbox">
+                        <input th:onclick="'isBan('+${user.id}+',this.value)'" th:checked="${user.type}==9"
+                               th:value="${user.type}" type="checkbox"
+                               name="type" th:id="${user.id}">
+                        <label th:for="${user.id}" style="cursor: pointer">封禁</label>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr>
+                <th colspan="6">
+                    <div class="ui mini pagination menu" th:if="${page.totalPages}>1">
+                        <a th:href="@{/admin/users(page=${page.number}-1)}" class="  item"
+                           th:unless="${page.first}">上一页</a>
+                        <a th:href="@{/admin/users(page=${page.number}+1)}" class=" item"
+                           th:unless="${page.last}">下一页</a>
+                    </div>
+                    <a href="#" th:href="@{/admin/toadduser}" class="ui tiny right floated primary button">新增</a>
+                </th>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<br>
+<br>
+<!--底部footer-->
+<footer th:replace="admin/_fragments :: footer"></footer>
+<th:block th:replace="_fragments :: script"/>
+<script>
+    $('.menu.toggle').click(function () {
+        $('.m-item').toggleClass('m-mobile-hide');
+    });
+
+    $('.ui.dropdown').dropdown({
+        on: 'hover'
+    });
+
+    function isBan(userID, type) {
+        $.ajax({
+            url: "/admin/ban",
+            data: {id: userID, type: type},
+            type: "POST",
+            dataType: 'text',
+            success: function (re) {
+                if (re) {
+                    $('.alert').html(re).addClass('alert-success').show().delay(1500).fadeOut();
+                    document.getElementById(userID).value = type === '9' ? 1 : 9;
+                } else {
+                    $('.alert').html(re).addClass('alert-danger').show().delay(1500).fadeOut();
+                }
+            },
+            error: function (re) {
+                console.log(re);
+            }
+        });
+    }
+
+    //消息提示关闭初始化
+    $('.message .close')
+        .on('click', function () {
+            $(this)
+                .closest('.message')
+                .transition('fade');
+        });
+</script>
+</body>
+</html>

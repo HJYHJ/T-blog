@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="admin/_fragments :: head(~{::title})">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻发布</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/2.2.4/semantic.min.css">
+    <link rel="stylesheet" href="../../static/lib/editormd/css/editormd.min.css">
+    <link rel="stylesheet" href="../../static/css/me.css">
+</head>
+<body>
+
+<!--导航-->
+<nav th:replace="admin/_fragments :: menu(5)"></nav>
+
+<!--中间内容-->
+<div class="m-container m-padded-tb-big">
+    <div class="ui container">
+        <form id="news-form" action="#" th:object="${news}" th:action="@{/admin/news}" method="post" class="ui form">
+            <input type="hidden" name="published" th:value="*{published}">
+            <input type="hidden" name="id" th:value="*{id}">
+            <div class="required field">
+                <div class="ui left labeled input">
+                    <input type="text" name="title" placeholder="标题" th:value="*{title}">
+                </div>
+            </div>
+            <div class="required field">
+                <div class="ui left labeled input">
+                    <label class="ui blue label" style="cursor: pointer">上传新闻首图
+                        <input type="file" hidden="hidden" onchange="uploadImg(event)">
+                    </label>
+                    <input type="text" name="firstPicture" th:value="*{firstPicture}" placeholder="新闻的首图地址">
+                </div>
+            </div>
+            <div class="required field" th:unless="${introduction}">
+        <textarea rows="3" name="description" th:text="*{description}" placeholder="新闻描述,100字以内..."
+                  maxlength="100"></textarea>
+            </div>
+            <div class="required field">
+                <div id="md-content" style="z-index: 1 !important;">
+                    <textarea placeholder="新闻内容" name="content" style="display: none" th:text="*{content}"></textarea>
+                </div>
+            </div>
+
+            <div class="inline fields">
+                <div class="field">
+                    <div class="ui checkbox">
+                        <input type="checkbox" id="commentabled" name="commentabled" th:checked="*{commentabled}"
+                               class="hidden">
+                        <label for="commentabled">评论</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui error message"></div>
+
+            <div class="ui right aligned container">
+                <button type="button" class="ui button" onclick="window.history.go(-1)">返回</button>
+                <button type="button" id="save-btn" class="ui grey button">保存</button>
+                <button type="button" id="publish-btn" class="ui primary button">发布</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<br>
+<br>
+<!--底部footer-->
+<footer th:replace="admin/_fragments :: footer"></footer>
+
+<th:block th:replace="admin/_fragments :: script"/>
+<script>
+
+    //初始化Markdown编辑器
+    var contentEditor;
+    $(function () {
+        contentEditor = editormd("md-content", {
+            width: "100%",
+            height: 640,
+            syncScrolling: "single",
+            path: "/lib/editormd/lib/",
+            imageUpload: true,
+            tex: true, // 开启科学公式TeX语言支持，默认关闭
+            flowChart: true, // 开启流程图支持，默认关闭
+            imageFormats: ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
+            imageUploadURL: "/file/imgupload"
+        });
+    });
+
+    $('.menu.toggle').click(function () {
+        $('.m-item').toggleClass('m-mobile-hide');
+    });
+
+    $('.ui.dropdown').dropdown({
+        on: 'hover'
+    });
+
+    $('#save-btn').click(function () {
+        $('[name="published"]').val(false);
+        $('#news-form').submit();
+    });
+
+
+    $('#publish-btn').click(function () {
+        $('[name="published"]').val(true);
+        $('#news-form').submit();
+    });
+
+    function uploadImg(e) {
+        let formData = new FormData();
+        formData.append("editormd-image-file", e.target.files[0]);
+        $.ajax({
+            url: '/file/imgupload',
+            data: formData,
+            type: "POST",
+            dataType: 'json',
+            contentType: false,
+            processData: false,
+            success: function (re) {
+                if (re) {
+                    if (re.error) {
+                        alert(re.message);
+                        return
+                    }
+                    $("[name = 'firstPicture']").val(re.url);
+                } else {
+                    alert(re)
+                }
+            }
+        });
+    }
+
+    $('.ui.form').form({
+        fields: {
+            title: {
+                identifier: 'title',
+                rules: [{
+                    type: 'empty',
+                    prompt: '请输入新闻标题'
+                }]
+            },
+            content: {
+                identifier: 'content',
+                rules: [{
+                    type: 'empty',
+                    prompt: '请输入新闻内容'
+                }]
+            },
+            typeId: {
+                identifier: 'type.id',
+                rules: [{
+                    type: 'empty',
+                    prompt: '请输入新闻分类'
+                }]
+            },
+            /*
+          firstPicture : {
+            identifier: 'firstPicture',
+            rules: [{
+              type : 'empty',
+              prompt: '请输入新闻首图'
+            }]
+          },*/
+            description: {
+                identifier: 'description',
+                rules: [{
+                    type: 'empty',
+                    prompt: '请输入新闻描述'
+                }]
+            }
+        }
+    });
+
+</script>
+</body>
+</html>
